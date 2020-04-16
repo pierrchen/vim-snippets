@@ -1,0 +1,81 @@
+## when edit this file using vi, open it as java and disable tab to space explansion
+## e +setfiletype\ java yaml.snippets
+## set noexpandtab
+## set list
+## or anable this in .vimrc autocmd BufEnter *.snippets :setlocal filetype=java noexpandtab list
+snippet kdm
+	apiVersion: apps/v1
+	kind: DaemonSet
+	metadata:
+		name: ${0:appname}
+		labels:
+			k8s-app: ${1:appname}
+	spec:
+		selector:
+			matchLabels:
+				k8s-app: ${2:appname}
+		template:
+			metadata:
+				labels:
+					k8s-app: ${3:appname}
+			spec:
+				hostNetwork: true
+				priorityClassName: system-node-critical
+				terminationGracePeriodSeconds: 30
+				tolerations:
+					- key: CriticalAddonsOnly
+						operator: Exists
+					- key: node.appinfra.cba/workload
+						operator: Exists
+				containers:
+					- name: tinytool
+						image: dockerhub.artifactory.ai.cba/giantswarm/tiny-tools
+						command: ["/bin/sh", "-c", "netstat -ltnp | grep 169.254.20.10 | grep 53 | wc -l; sleep 3600;"]
+						imagePullPolicy: IfNotPresent
+
+snippet kcmd
+	command:
+		- "/bin/sh"
+		- "-c"
+		- "netstat -ltnp | grep 169.254.20.10 | grep 53 | wc -l; sleep 3600;"
+
+snippet kdp
+	apiVersion: apps/v1
+	kind: Deployment
+	metadata:
+	  name: appname
+	  namespace: appns
+	spec:
+		selector:
+			matchLabels:
+				k8s-app: appname
+		template:
+			metadata:
+				name: appname
+				namespace:  appns
+				labels:
+					k8s-app: appname
+			spec:
+				containers:
+					- name: tinytool
+						image: dockerhub.artifactory.ai.cba/giantswarm/tiny-tools
+						command: ["/bin/bash", "-c", "while true; do sleep 1200; done"]
+						resources:
+							limits:
+							memory: "128Mi"
+							cpu: "500m"
+
+snippet kpod
+	apiVersion: v1
+	kind: Pod
+	metadata:
+		name: appname
+		lables:
+			k8s-app: appname
+	spec:
+		hostNetwork: true
+		containers:
+		- image: dockerhub.artifactory.ai.cba/giantswarm/tiny-tools
+			command: ["/bin/sh", "-c", "netstat -ltnp | grep 169.254.20.10 | grep 53 | wc -l; sleep 3600;"]
+			imagePullPolicy: IfNotPresent
+			name: tinytool

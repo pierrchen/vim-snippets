@@ -1,0 +1,25 @@
+snippet auth
+	auto_auth {
+		method "jwt" {
+			mount_path = "auth/jwt_jenkins"
+			config {
+				path = ".vault-jwt"
+				role = "build"
+			}
+		}
+		sink "file" {
+			config {
+				path = ".vault-token"
+			}
+		}
+	}
+
+snippet tp
+	template {
+		source = "tpl/netrc"
+		destination = ".netrc"
+		error_on_missing_key = true
+	}
+
+
+

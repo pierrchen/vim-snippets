@@ -1,26 +1,124 @@
-# Shebang. Executing bash via /usr/bin/env makes scripts more portable.
-snippet #!
-	#!/usr/bin/env sh
+# Follow https://google.github.io/styleguide/shellguide.html
 
-snippet s#!
-	#!/usr/bin/env sh
-	set -eu
-
-snippet safe
-	set -eu
-
-snippet bash
+snippet t
 	#!/usr/bin/env bash
-
-snippet sbash
-	#!/usr/bin/env bash
-	set -euo pipefail
-	IFS=$'\n\t'
-
-snippet if
-	if [[ ${1:condition} ]]; then
-		${0:${VISUAL}}
+	# description of the script
+	set -eu
+	set -o pipefail
+	var=${1:Error var is not provided}
+	usage()
+	{
+		echo "Usage:"
+		echo
+		echo "Examples:"
+	}
+	if [ "$#" -ne ${0:2} ]; then
+		echo "ERROR: invalid usage, need ${0:2} args"
+		usage
+		exit 1
 	fi
+	err() {
+		echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+	}
+
+snippet sb
+	#!/bin/bash
+
+snippet cfm
+	read -p "Confirm [y/N]? " -r
+	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		echo "Note: You didn't confirm"
+		exit 0
+	fi
+
+snippet func
+	#######################################
+	# What does it do
+	# Globals:
+	#   SOMEDIR List of global variables used and modified.
+	# Arguments:
+	#   None Arguments taken
+	# Outputs:
+	#   Writes location to stdout or stderr
+	# Returns:
+	#   0 if xxx; non zero on error
+	#######################################
+	you_function() {
+	}
+
+snippet iff
+	if [[ test -f ${f1} -a test -f ${f2} ]]
+
+
+# string comparision
+# equal,  empty, not-empty
+snippet ifs
+	if [[ ${s} == "test" ]]; then
+	if [[ -z ${s} ]]; then
+	if [[ -n ${s} ]]; then
+
+# numerical comparision
+snippet ifn
+	if (( var > 2 )); then
+	fi
+
+snippet  add
+	$(( i = 4 * j + 5))
+
+# do something if command succeed, judging by cmd exit status
+snippet ifcmd
+	if ${cmd}; then
+		echo "succeed"
+	else
+		echo "failed"
+	fi
+
+# check command output
+snippet ifcmdo
+	if [[ $(cmd) ]]; then
+		echo "has output"
+	else
+		echo "no output"
+	fi
+
+snippet ckcmd
+	cmd
+	if (( $? != 0 )) then;
+		echo "cmd failed"
+		exit 1
+	fi
+
+snippet ifcmdg
+	if cmd | grep "target"; then
+		echo "find target in outout, good or bad?"
+	fi
+
+snippet ntimes
+	for i in $(seq 1 ${0:10}); do
+		echo -n "try ${i}: "
+		if ${1:dosomething}; then
+			echo "Success!"
+			exit 0
+		fi
+		echo "Failed!"
+		sleep 10
+	done
+
+snippet curl
+	curl \
+	-vvv \
+	--fail \
+	--cert ${0:cert}  \
+	--key ${0:key}\
+	-u "user:passwd" \
+	-H 'Content-Type: application/json' \
+	-d "${}" \
+	-X "action" \
+	"http://url"
+
+snippet jqe
+	$(jq -r '.a.b' path/to.json)
+
 snippet elif
 	elif [[ ${1:condition} ]]; then
 		${0:${VISUAL}}
@@ -29,8 +127,24 @@ snippet for
 		${0:${VISUAL}}
 	done
 snippet fori
-	for ${1:needle} in ${2:haystack} ; do
-		${0:${VISUAL}}
+	for ${1:thing} in ${2:things} ; do
+		something_with "${things}"
+	done
+snippet forarray
+	for i in ${a[@]}; do
+		do_something ${f}
+	done
+
+snippet da
+	declare -a flags
+	flags=(--foo --bar='baz')
+	flags+=(--greeting="Hello ${name}")
+	mybinary "${flags[@]}"
+
+
+snippet forline
+	cat_a_file or echo $var | while read line;
+		do_something to "${line}"
 	done
 snippet wh
 	while [[ ${1:condition} ]]; do
@@ -40,10 +154,12 @@ snippet until
 	until [[ ${1:condition} ]]; do
 		${0:${VISUAL}}
 	done
+
 snippet case
 	case ${1:word} in
 		${2:pattern})
-			${0};;
+			${0}
+			;;
 	esac
 snippet go
 	while getopts '${1:o}' ${2:opts}

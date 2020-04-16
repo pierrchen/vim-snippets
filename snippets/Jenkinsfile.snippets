@@ -1,7 +1,7 @@
 snippet steps
 	steps {
 		sh '${1:make check}'
-		junit '${2:reports/**/*.xml}' 
+		junit '${2:reports/**/*.xml}'
 	}
 	${0}
 
@@ -9,37 +9,77 @@ snippet stage
 	stage('${1:Test}'){
 		steps {
 			sh '${2:make check}'
-			junit '${3:reports/**/*.xml}' 
+			junit '${3:reports/**/*.xml}'
 		}
 	}
 	${0}
 
-snippet pipeline
+
+snippet testurl
+	if ! curl --head --fail --silent -L --connect-timeout 30 -o /dev/null "${url}"; then
+		echo "$url doesn't exsit"
+	fi
+
+snippet p
+	#!/usr/bin/env groovy
+	@Library('Bedrock') _
+	def labels = 'os:linux && (role:docker || role:canary) && zone:controlled'
+
 	pipeline {
-		agent any 
+		agent any
+		options {
+			ansiColor('xterm')
+		}
+		environmnet {
+		}
 		stages {
-			stage('${1:Build}') { 
-				steps { 
-					sh '${2:make}' 
+			stage('${1:build}') {
+				steps {
+					sh '${2:make} build'
+				}
+			}
+			stage('${3:test}') {
+				steps {
+					sh '${4:make} test'
+				}
+			}
+			stage('${5:release}') {
+				steps {
+					sh '${6:make} release'
 				}
 			}
 		}
 	}
 	${0}
 
+# auth wrapper
+snippet auth
+	jwtIssuer(tokenFile: '.vault-jwt') {
+		withVaultJWTLogin('build', '.vault-jwt', 'jwt_jenkins') {
+			withArtifactoryServerAuth(url: 'https://artifactory.internal.cba', mount: 'database/artifactory', role: 'applicationinfrastructure-hostos-generic-write') {
+				withDockerCLIRegistryAuth(url: 'applicationinfrastructure-cspr.docker.internal.cba', mount: 'database/artifactory', role: 'applicationinfrastructure-cspr-docker-write') {
+					# sh docker pull image or jfrog xxx
+				}
+			}
+		}
+	}
+
+snippet vault
+	environment { VAULT_ADDR = "https://vault.ai.cba" }
+
 snippet pipeline_sample
 	pipeline {
-		agent any 
+		agent any
 		stages {
-			stage('${1:Build}') { 
-				steps { 
-					sh '${2:make}' 
+			stage('${1:Build}') {
+				steps {
+					sh '${2:make}'
 				}
 			}
 			stage('${3:Test}'){
 				steps {
 					sh '${4:make check}'
-					junit '${5:reports/**/*.xml}' 
+					junit '${5:reports/**/*.xml}'
 				}
 			}
 			stage('${6:Deploy}') {
@@ -70,72 +110,72 @@ snippet df
 	}
 
 snippet  pa
-	post { 
-		always { 
+	post {
+		always {
 			${1}
 		}
 	}
 	${0}
 
 snippet  pc
-	post { 
-		changed { 
+	post {
+		changed {
 			${1}
 		}
 	}
 	${0}
 
 snippet  pf
-	post { 
-		fixed { 
+	post {
+		fixed {
 			${1}
 		}
 	}
 	${0}
 
 snippet  pr
-	post { 
-		regression { 
+	post {
+		regression {
 			${1}
 		}
 	}
 	${0}
 
 snippet  pab
-	post { 
-		aborted { 
+	post {
+		aborted {
 			${1}
 		}
 	}
 	${0}
 
-snippet pfa 
-	post { 
-		failure { 
+snippet pfa
+	post {
+		failure {
 			${1}
 		}
 	}
 	${0}
 
 snippet ps
-	post { 
-		success { 
+	post {
+		success {
 			${1}
 		}
 	}
 	${0}
 
 snippet pu
-	post { 
-		unstable { 
+	post {
+		unstable {
 			${1}
 		}
 	}
 	${0}
 
 snippet  pc
-	post { 
-		cleanup { 
+	post {
+		cleanup {
 			${1}
 		}
 	}
@@ -144,11 +184,11 @@ snippet  pc
 
 snippet psss
 	pipeline {
-		agent any 
+		agent any
 		stages {
-			stage('${1:Build}') { 
-				steps { 
-					sh '${2:make}' 
+			stage('${1:Build}') {
+				steps {
+					sh '${2:make}'
 				}
 			}
 	}
@@ -156,9 +196,9 @@ snippet psss
 
 snippet sss
 	stages {
-		stage('${1:Build}') { 
-			steps { 
-				sh '${2:make}' 
+		stage('${1:Build}') {
+			steps {
+				sh '${2:make}'
 			}
 		}
 	}
@@ -167,7 +207,7 @@ snippet sss
 
 
 snippet parameters
-	parameters{ 
+	parameters{
 		${1}
 	}
 	${0}
@@ -181,7 +221,7 @@ snippet parambool
 		${0}
 
 snippet paramchoice
-		choice(name: "${1:CHOICE}" , choices: ["${2:Choices}",] , description: "${3:Pick something}") 
+		choice(name: "${1:CHOICE}" , choices: ["${2:Choices}",] , description: "${3:Pick something}")
 		${0}
 
 snippet parampassword
@@ -203,7 +243,7 @@ snippet input
 		message '${1:Should we continue?}'
 		ok '${2:Yes, we should.}'
 		submitter '${3:alice,bob}'
-		parameters { 
+		parameters {
 			string(name: '${4:PERSON}' , defaultValue: '${5:Mr Jenkins}' , description: '${6:Who should I say hello to?}')
 		}
 	}

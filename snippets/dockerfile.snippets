@@ -1,0 +1,61 @@
+snippet go
+	FROM hub.docker.internal.cba/golang:1.14@sha256:15f72b7c8f18323f8553510a791f68b78ecdf2f1b0acae865fa3d8a1636b3fd4 AS build
+	COPY . /build
+	WORKDIR /build
+	ENV CGO_ENABLED 0
+	RUN go build -mod=vendor \
+		   -o "/build/${0:app}" \
+		   -a \
+		   -ldflags '-s -w -extldflags "-static"'
+	# Use this base as an output
+	FROM scratch
+	COPY --from=build /build/app /
+	ENTRYPOINT ["/${0:app}"]
+
+snippet cbad
+	hub.docker.internal.cba
+
+snippet gb
+	RUN go build -mod=vendor \
+		   -o "/build/${0:app}" \
+		   -a \
+		   -ldflags '-s -w -extldflags "-static"'
+
+# curl an artifact (from github with mirror) and package it.
+# we use go as the build image since it has curl installed and we can also use it in case we want to build a go package
+# finally we will package it in the sratch, dive can be used to check the content of the final package
+snippet curl
+	FROM hub.docker.internal.cba/golang:1.14@sha256:15f72b7c8f18323f8553510a791f68b78ecdf2f1b0acae865fa3d8a1636b3fd4 AS build
+
+	ARG VERSION=1.4.1
+	ARG GITHUB_MIRROR="https://artifactory.internal.cba/com.github"
+	WORKDIR /containerd
+	RUN curl -fssL -o release.tar.gz ${GITHUB_MIRROR}/containerd/containerd/releases/download/v${VERSION}/cri-containerd-cni-${VERSION}-linux-amd64.tar.gz \
+		&& tar -xz -f release.tar.gz \
+		&& rm release.tar.gz
+
+	FROM scratch
+	COPY --from=build /containerd /
+
+snippet ubuntu
+	FROM hub.docker.internal.cba/library/ubuntu:cosmic
+	RUN apt-get update \
+		&& apt-get install --no-install-recommends -y jq mawk sed \
+		&& apt-get clean \
+		&& rm -rf /var/lib/apt/lists/*
+	COPY scripts /scripts
+	WORKDIR /scripts
+	ENTRYPOINT ["/scripts/program"]
+
+
+snippet  py
+	FROM docker.artifactory.ai.cba/library/ubuntu:cosmic
+	RUN apt-get update \
+		&& apt-get install --no-install-recommends -y python3-pip python3-dev \
+		&& apt-get clean \
+		&& rm -rf /var/lib/apt/lists/*
+	CP requirements.txt /app/requirements.txt
+	WORKDIR app
+	RUN pip3 install -r requirements.txt
+	COPY . /app
+	ENTRYPOIN ["python3", "app.py"]

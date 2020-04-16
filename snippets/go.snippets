@@ -278,3 +278,33 @@ snippet errwr "Error handling with errors.Wrap"
 	if ${1}err != nil {
 		return errors.Wrap(err, "${2}")
 	}
+
+snippet cmd "create a main with command"
+	func main() {
+		app := &cli.App{}
+		app.Name = "app"
+		app.Version = "0.1.0"
+		app.Commands = []cli.Command{
+			{
+				Name:  "get",
+				Usage: "get [--template template][apps|nodes|tasks(pods)]",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "template", Value: "", Usage: "template"},
+				},
+				Action: func(c *cli.Context) error {
+					if len(c.Args()) != 1 {
+						err := fmt.Errorf("missing args: get [apps|tasks]")
+						return err
+					}
+					switch c.Args().First() {
+					case "apps":
+						apps := *listApps()
+						if c.String("template") != "" {
+							// if flag exsist
+						}
+					}
+					return nil
+				},
+			},
+		}
+	}

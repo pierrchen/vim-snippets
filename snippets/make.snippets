@@ -8,7 +8,7 @@ snippet base
 
 	%.o: %.c
 		$(CC) $(CFLAGS) -c -o $@ $<
-	
+
 	${1:out}: $1.o
 		$(CC) $(CFLAGS) -o $@ $+
 
